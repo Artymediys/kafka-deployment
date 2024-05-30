@@ -1,0 +1,18 @@
+---
+kafka_version: "3.7.0"
+scala_version: "2.13"
+java_version: "17"
+kafka_install_dir: "/opt/kafka_{{ scala_version }}-{{ kafka_version }}"
+kafka_data_dir: "/var/lib/kafka"
+kafka_log_dir: "/var/log/kafka"
+kafka_user: "kafka"
+kafka_group: "kafka"
+controller_port: 9093
+broker_port: 9092
+node_id: 1
+controller_quorum_voters: "1@localhost:{{ controller_port }}"
+install_mode: "single"  # "replicated"
+kafka_topics:
+  - name: "test_topic"
+    partitions: 1
+    replication_factor: 1

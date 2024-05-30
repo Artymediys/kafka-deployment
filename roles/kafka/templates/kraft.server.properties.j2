@@ -1,0 +1,23 @@
+process.roles=broker,controller
+node.id={{ node_id }}
+controller.quorum.voters={{ controller_quorum_voters }}
+listeners=PLAINTEXT://:{{ broker_port }},CONTROLLER://:{{ controller_port }}
+log.dirs={{ kafka_data_dir }}
+num.network.threads=3
+num.io.threads=8
+socket.send.buffer.bytes=102400
+socket.receive.buffer.bytes=102400
+socket.request.max.bytes=104857600
+log.retention.hours=168
+log.segment.bytes=1073741824
+log.retention.check.interval.ms=300000
+group.initial.rebalance.delay.ms=0
+{% if install_mode == 'replicated' %}
+offsets.topic.replication.factor=3
+transaction.state.log.replication.factor=3
+transaction.state.log.min.isr=2
+{% else %}
+offsets.topic.replication.factor=1
+transaction.state.log.replication.factor=1
+transaction.state.log.min.isr=1
+{% endif %}
