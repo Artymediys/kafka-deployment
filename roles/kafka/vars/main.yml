@@ -10,7 +10,10 @@ kafka_group: "kafka"
 controller_port: 9093
 broker_port: 9092
 node_id: 1
-controller_quorum_voters: "1@localhost:{{ controller_port }}"
+controller_quorum_voters: >-
+  {%- for host in groups['kafka_cluster'] -%}
+  {{ hostvars[host]['node_id'] }}@{{ hostvars[host]['ansible_host'] }}:{{ controller_port }}{%- if not loop.last -%},{%- endif -%}
+  {%- endfor -%}
 install_mode: "single"  # "replicated"
 kafka_topics:
   - name: "test_topic"
