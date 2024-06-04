@@ -1,102 +1,12 @@
 ---
-- name: Ensure Java is installed
-  get_url:
-    url: "https://download.oracle.com/java/{{ java_version }}/latest/jdk-{{ java_version }}_linux-x64_bin.tar.gz"
-    dest: "/tmp/jdk-{{ java_version }}_linux-x64_bin.tar.gz"
-  register: download_java
-  changed_when: download_java.status == 200
+- name: Creating Kafka user and group
+  import_tasks: user.yml
 
-- name: Extract Java
-  unarchive:
-    src: "/tmp/jdk-{{ java_version }}_linux-x64_bin.tar.gz"
-    dest: /opt/
-    remote_src: yes
-  when: download_java.changed
+- name: Installing Java and Kafka
+  import_tasks: install.yml
 
-- name: Set Java home
-  shell: echo "export JAVA_HOME=/opt/jdk-{{ java_version }}" >> /etc/profile
-  args:
-    executable: /bin/bash
+- name: Configuring Kafka
+  import_tasks: configure.yml
 
-- name: Ensure Kafka is downloaded
-  get_url:
-    url: "https://downloads.apache.org/kafka/{{ kafka_version }}/kafka_{{ scala_version }}-{{ kafka_version }}.tgz"
-    dest: "/tmp/kafka_{{ scala_version }}-{{ kafka_version }}.tgz"
-  register: download_kafka
-  changed_when: download_kafka.status == 200
-
-- name: Extract Kafka
-  unarchive:
-    src: "/tmp/kafka_{{ scala_version }}-{{ kafka_version }}.tgz"
-    dest: /opt/
-    remote_src: yes
-  when: download_kafka.changed
-
-- name: Create Kafka directories
-  file:
-    path: "{{ item }}"
-    state: directory
-  with_items:
-    - "{{ kafka_data_dir }}"
-    - "{{ kafka_log_dir }}"
-
-- name: Create Kafka user and group
-  group:
-    name: "{{ kafka_group }}"
-    state: present
-
-- name: Create Kafka user
-  user:
-    name: "{{ kafka_user }}"
-    group: "{{ kafka_group }}"
-    create_home: no
-    shell: /bin/false
-
-- name: Set permissions on Kafka directories
-  file:
-    path: "{{ item }}"
-    state: directory
-    owner: "{{ kafka_user }}"
-    group: "{{ kafka_group }}"
-    mode: '0755'
-  with_items:
-    - "{{ kafka_install_dir }}"
-    - "{{ kafka_data_dir }}"
-    - "{{ kafka_log_dir }}"
-
-- name: Configure Kafka
-  template:
-    src: kraft.server.properties.j2
-    dest: "{{ kafka_install_dir }}/config/kraft/server.properties"
-    owner: "{{ kafka_user }}"
-    group: "{{ kafka_group }}"
-    mode: '0644'
-
-- name: Configure systemd for Kafka
-  template:
-    src: kafka.service.j2
-    dest: /etc/systemd/system/kafka.service
-    owner: root
-    group: root
-    mode: '0644'
-
-- name: Reload systemd
-  systemd:
-    daemon_reload: yes
-
-- name: Enable and start Kafka
-  systemd:
-    name: kafka
-    enabled: yes
-    state: started
-
-- name: Create Kafka topics
-  shell: >-
-    {{ kafka_install_dir }}/bin/kafka-topics.sh
-    --create
-    --topic {{ item.name }}
-    --partitions {{ item.partitions }}
-    --replication-factor {{ item.replication_factor }}
-    --bootstrap-server {{ groups['kafka_cluster'] | map('extract', hostvars, 'ansible_host') | join(',') }}:{{ broker_port }}
-  with_items: "{{ kafka_topics }}"
-  when: kafka_topics is defined
+- name: Launching Kafka
+  import_tasks: launch.yml

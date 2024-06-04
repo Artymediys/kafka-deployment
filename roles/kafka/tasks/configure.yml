@@ -1,0 +1,43 @@
+---
+- name: Configure Kafka
+  template:
+    src: kraft.server.properties.j2
+    dest: "{{ kafka_install_dir }}/config/kraft/server.properties"
+    owner: "{{ kafka_user }}"
+    group: "{{ kafka_group }}"
+    mode: '0644'
+
+- name: Generate cluster UUID
+  ansible.builtin.shell: "uuidgen"
+  register: cluster_uuid
+  when: inventory_hostname == groups['kafka_cluster'][0]
+
+- name: Set cluster UUID fact
+  ansible.builtin.set_fact:
+    kafka_cluster_uuid: "{{ cluster_uuid.stdout }}"
+  when: inventory_hostname == groups['kafka_cluster'][0]
+
+- name: Propagate cluster UUID to all nodes
+  ansible.builtin.set_fact:
+    kafka_cluster_uuid: "{{ hostvars[groups['kafka_cluster'][0]].kafka_cluster_uuid }}"
+  when: inventory_hostname != groups['kafka_cluster'][0]
+
+- name: Debug cluster UUID
+  debug:
+    msg: "Kafka Cluster UUID is {{ kafka_cluster_uuid }}"
+
+- name: Initialize Kafka KRaft cluster
+  ansible.builtin.shell: >-
+    {{ kafka_install_dir }}/bin/kafka-storage.sh format
+    -t {{ kafka_cluster_uuid }}
+    -c {{ kafka_install_dir }}/config/kraft/server.properties
+  args:
+    executable: /bin/bash
+
+- name: Configure systemd for Kafka
+  template:
+    src: kafka.service.j2
+    dest: /etc/systemd/system/kafka.service
+    owner: "{{ kafka_user }}"
+    group: "{{ kafka_group }}"
+    mode: '0644'

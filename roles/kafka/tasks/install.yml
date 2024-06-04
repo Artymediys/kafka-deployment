@@ -1,0 +1,53 @@
+---
+- name: Ensure Java is installed
+  get_url:
+    url: "{{ java_download_url }}"
+    dest: "/tmp/jdk-{{ java_version }}_linux-x64_bin.tar.gz"
+  register: download_java
+  changed_when: download_java.status == 200
+
+- name: Extract Java
+  unarchive:
+    src: "/tmp/jdk-{{ java_version }}_linux-x64_bin.tar.gz"
+    dest: /opt/
+    remote_src: yes
+  when: download_java.changed
+
+- name: Set Java home
+  shell: echo "export JAVA_HOME=/opt/jdk-{{ java_version }}" >> /etc/profile
+  args:
+    executable: /bin/bash
+
+- name: Ensure Kafka is downloaded
+  get_url:
+    url: "{{ kafka_download_url }}"
+    dest: "/tmp/kafka_{{ scala_version }}-{{ kafka_version }}.tgz"
+  register: download_kafka
+  changed_when: download_kafka.status == 200
+
+- name: Extract Kafka
+  unarchive:
+    src: "/tmp/kafka_{{ scala_version }}-{{ kafka_version }}.tgz"
+    dest: /opt/
+    remote_src: yes
+  when: download_kafka.changed
+
+- name: Create Kafka directories
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - "{{ kafka_data_dir }}"
+    - "{{ kafka_log_dir }}"
+
+- name: Create and Set permissions on Kafka directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ kafka_user }}"
+    group: "{{ kafka_group }}"
+    mode: '0755'
+  with_items:
+    - "{{ kafka_install_dir }}"
+    - "{{ kafka_data_dir }}"
+    - "{{ kafka_log_dir }}"
