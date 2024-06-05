@@ -1,5 +1,5 @@
 - name: Installing and configuring Kafka with KRaft
-  hosts: kafka
+  hosts: kafka_cluster
   become: yes
   roles:
     - kafka

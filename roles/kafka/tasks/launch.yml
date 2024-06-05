@@ -6,12 +6,8 @@
     state: restarted
 
 - name: Wait for Kafka to start
-  wait_for:
-    port: "{{ broker_port }}"
-    host: "{{ inventory_hostname }}"
-    state: started
-    delay: 10
-  when: kafka_topics is defined
+  pause:
+    seconds: 10
 
 - name: Create Kafka topics
   shell: >-
@@ -20,10 +16,10 @@
     --topic {{ item.name }}
     --partitions {{ item.partitions }}
     --replication-factor {{ item.replication_factor }}
-    --bootstrap-server {{ groups['kafka_cluster'][0] }}:{{ broker_port }}
+    --bootstrap-server {{ hostvars[groups['kafka_cluster'][0]].ansible_host }}:{{ broker_port }}
   with_items: "{{ kafka_topics }}"
   when:
-    - inventory_hostname == groups['kafka'][0]
+    - inventory_hostname == groups['kafka_cluster'][0]
     - kafka_topics is defined
 
 # --bootstrap-server {{ groups['kafka_cluster'] | map('extract', hostvars, 'ansible_host') | join(',') }}:{{ broker_port }}
