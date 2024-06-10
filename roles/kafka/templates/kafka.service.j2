@@ -11,6 +11,8 @@ ExecStop={{ kafka_install_dir }}/bin/kafka-server-stop.sh
 Restart=on-failure
 User={{ kafka_user }}
 Group={{ kafka_group }}
+StandardOutput=file:{{ kafka_log_dir }}/kafka.out.log
+StandardError=file:{{ kafka_log_dir }}/kafka.err.log
 
 [Install]
 WantedBy=multi-user.target

@@ -1,32 +1,15 @@
 ---
-kafka_version: "3.7.0"
-scala_version: "2.13"
-java_version: "17"
-
-kafka_download_url: "https://downloads.apache.org/kafka/{{ kafka_version }}/kafka_{{ scala_version }}-{{ kafka_version }}.tgz"
-java_download_url: "https://download.oracle.com/java/{{ java_version }}/latest/jdk-{{ java_version }}_linux-x64_bin.tar.gz"
-install_path: "/opt/"
+#################################
+######## CONST VARIABLES ########
+#################################
 
 kafka_install_dir: "{{ install_path }}kafka_{{ scala_version }}-{{ kafka_version }}"
-kafka_data_dir: "/var/lib/kafka"
-kafka_log_dir: "/var/log/kafka"
 
-kafka_user: "kafka"
-kafka_group: "kafka"
+max_message_size_bytes: "{{ max_message_size_megabytes * 1048576 }}"
 
-controller_port: 9093
-broker_port: 9092
+message_retention_hours: "{{ message_retention_days * 24 }}"
 
-install_mode: "replicated"  # "single"
 controller_quorum_voters: >-
   {%- for host in groups['kafka_cluster'] -%}
   {{ hostvars[host]['node_id'] }}@{{ hostvars[host]['ansible_host'] }}:{{ controller_port }}{%- if not loop.last -%},{%- endif -%}
   {%- endfor -%}
-
-kafka_topics:
-  - name: "test_topic"
-    partitions: 2
-    replication_factor: 2
-  - name: "another_topic"
-    partitions: 2
-    replication_factor: 2

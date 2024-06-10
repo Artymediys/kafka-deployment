@@ -10,10 +10,17 @@
     dest: "{{ install_path }}"
     remote_src: yes
 
+- name: Save Java installation directory path
+  ansible.builtin.find:
+    paths: "{{ install_path }}"
+    patterns: 'jdk-*'
+    file_type: directory
+  register: java_install_dir
+
 - name: Set Java home
   lineinfile:
     path: /etc/profile
-    line: "export JAVA_HOME={{ install_path }}jdk-{{ java_version }}"
+    line: "export JAVA_HOME={{ java_install_dir.files[0].path }}"
     state: present
     insertafter: EOF
 
@@ -55,3 +62,14 @@
     - "{{ kafka_install_dir }}"
     - "{{ kafka_data_dir }}"
     - "{{ kafka_log_dir }}"
+
+- name: Create log files
+  file:
+    path: "{{ item }}"
+    state: touch
+    owner: "{{ kafka_user }}"
+    group: "{{ kafka_group }}"
+    mode: '0644'
+  with_items:
+    - "{{ kafka_log_dir }}/kafka.out.log"
+    - "{{ kafka_log_dir }}/kafka.err.log"
